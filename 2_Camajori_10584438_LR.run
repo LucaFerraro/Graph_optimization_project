@@ -9,7 +9,7 @@ option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds
 
 # Definition of the Lagrangian Relaxation problem
-problem LR: x, y, z, LR_objective_lambda, load_balance, arc_capacity;
+problem LR: x, y, z, LR_objective_lambda, load_balance, arc_capacity, demand_assignement;
 
 # Paramters for LR
 param MAXITER := 200;

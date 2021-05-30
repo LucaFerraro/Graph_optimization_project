@@ -1,0 +1,166 @@
+reset;
+
+model 4_Camajori_10584438_Random_Rounding.mod;
+
+data instanceNORBP.dat;
+
+option solver 'cplex';
+option cplex_options 'timelimit=600'; # in seconds
+
+# Definition of the partial_CR problem
+problem partial_CR: x, y_CR, z_CR, Cost_CR, load_balance_CR, node_capacity_CR, arc_capacity_CR, demand_assignement_CR;
+
+# Paramters for computational time
+param tic;
+param toc;
+param Randomized_Rounding_time;
+
+param MaxIter default card(N)*100;
+
+
+#current partial solution
+let CY := {};
+let PY := {};
+
+# index to 
+param index default first(PY);
+
+
+# random parameter
+param r default 0;
+
+# cost of the LP relaxation
+param continuousRel_cost default 0;
+# cost of the solution obtained with randomized rounding
+param randRound_cost default 0;
+
+
+printf"-----------------------------------------------------------------------------\n" > results_4.txt;
+printf"                           Initial values \n" > results_4.txt;
+printf"-----------------------------------------------------------------------------\n\n" > results_4.txt;
+
+display card(CY) > results_4.txt;
+display card(PY) > results_4.txt;
+
+
+printf"\n" > results_4.txt;
+
+
+printf"-----------------------------------------------------------------------------\n" > results_4.txt;
+printf"                		   Randomized Rounding \n" > results_4.txt;
+printf"-----------------------------------------------------------------------------\n\n" > results_4.txt;
+
+#number of Randomized Rounding iterations
+param iter default 0;
+let tic := _ampl_user_time;
+
+repeat{
+
+   let iter := iter + 1;
+   	
+   # Solve the LP relaxation
+   solve partial_CR;
+
+   printf"  					        Iteration %d \n",iter > results_4.txt;
+   printf"     ------------------------------------------------------------------- \n\n" > results_4.txt;
+      
+   printf"\n" > results_4.txt;
+   
+   printf"Solved the current LP relaxation\n" > results_4.txt;
+   
+   display y_CR > results_4.txt;
+       
+   display Cost_CR > results_4.txt;
+   
+      
+   # Put in CY the facilities with y^*=1
+   let CY := CY union {setof {i in N: y_CR[i] = 1} i};
+   
+   # Put in PY the facilities with y^* fractionary
+   let PY := setof {i in N: 0 < y_CR[i] < 1} i;
+   
+   # If all the yi are integer, we know that zki are integer and so we go out from the while
+   if card(PY) == 0 then{
+   		break
+   }
+   
+   printf"Updated CY:\n\n" > results_4.txt;
+		
+   display card(CY) > results_4.txt;
+   
+     
+   repeat{
+	
+	# select a random node index in PY
+   	let index := member(int(Uniform(1,card(PY))),PY);
+	
+	# remove it from PY
+   	let PY := PY diff {index};
+	
+	# generate a random value r between 0 and 1 
+   	let r := Uniform(0,1);
+   	
+   	printf "Node considered %4d: prob=%f y=%f ", index, r, y_CR[index] > results_4.txt;
+	
+	# add node index to the solution if y^*[index] > r
+   	if r <= y_CR[index] then 
+   	{
+    	let CY := CY union {index};
+      	printf " -> added to the opened facilities \n" > results_4.txt;	
+   	}
+   	else
+   		printf"\n" > results_4.txt;
+   	 
+   }while (card(PY) > 0);
+   
+   # Fix variables for next problem
+   fix {i in CY} y_CR[i] := 1;
+   
+   printf"\n" > results_4.txt;
+   
+   printf"Updated CY:\n\n" > results_4.txt;
+   
+   display card(CY) > results_4.txt;
+      
+   
+} while (iter < MaxIter);
+
+let toc := _ampl_user_time + _total_solve_user_time;
+let Randomized_Rounding_time := toc - tic;
+
+printf"\n" > results_4.txt;
+
+printf"                      Final composition of variables \n" > results_4.txt;
+printf"     ------------------------------------------------------------------- \n\n" > results_4.txt;
+
+
+# if not all variables yi are integer, put them to 1
+let PY := {setof {i in N: 0 < y_CR[i] < 1} i};
+if card(PY) > 0 then {
+	solve partial_CR;
+	let PY := {setof {i in N: 0 < y_CR[i] < 1} i};
+	fix {i in PY} y_CR[i] := 1;
+	solve partial_CR;
+}
+
+
+display card(CY) > results_4.txt;
+
+display CY > results_4.txt;
+display y_CR > results_4.txt;
+display z_CR > results_4.txt;
+# display x > results_4.txt;
+
+let randRound_cost := sum{i in CY}c[i] + sum {k in D, (i,j) in A} x[i,j,k]*g[i,j];
+
+printf"\n\nRandomized Rounding cost %f", randRound_cost > results_4.txt;
+printf"\n\nTime Randomized Rounding  %f", Randomized_Rounding_time > results_4.txt;
+
+
+
+
+
+
+
+
+

@@ -42,7 +42,9 @@ subject to load_balance {i in N, k in D}:
 subject to arc_capacity {(i,j) in A}:
 	sum {k in D} x[i,j,k]*d[k] <= uu;
 
-
+# demand_assignement constraints
+subject to demand_assignement {k in D}:
+	sum {i in N} z[k,i] = 1;
 
 
 

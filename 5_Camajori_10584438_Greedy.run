@@ -1,0 +1,156 @@
+reset;
+reset option;
+
+model parameterDefinition.mod
+model 5_Camajori_10584438_Greedy.mod;
+
+data instanceAB1.dat;
+
+
+param iter default 0;
+
+param greedySol default 0;
+
+param time1 default 0;
+
+# To print all steps of greedy procedure. 
+param PrintSteps default 0;
+
+
+#current partial solution
+set Y := {}; # yi
+set Z := {}; # zki 
+set X := {}; # xijk
+
+display Y;
+display Z;
+display X;
+
+printf"-----------------------------------------------------------------------------\n" > results_5.txt;
+printf"                		   Greedy  \n" > results_5.txt;
+printf"-----------------------------------------------------------------------------\n\n" > results_5.txt;
+
+
+
+# Open a facility in each node that can serve its own demand
+for {k in D, i in N: o[k] = i}{
+	if C_spare[i] >= d[k] then{
+		let Y := Y union {i};
+		let Z := Z union {(k,i)};
+		let C_spare[i] := C_spare[i] - d[k];
+	}
+}
+
+printf"  					        Initial assignment %d \n" > results_5.txt;
+printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+
+display Y;
+display Z;
+display X;
+
+
+repeat{
+
+   let iter := iter + 1;
+   
+   if (PrintSteps != 0) then{
+	   printf"  					        Iteration %d \n",iter > results_5.txt;
+	   printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+	      
+	   printf"\n" > results_5.txt;
+	   
+	   printf"\n\nUpdated opened facilities Y:\n\n" > results_5.txt;
+	   for{i in Y} printf"%d   ", i > results_5.txt; 
+	  
+	   printf"\n\nUpdated pair demand-facility_destination Z:\n\n" > results_5.txt;
+	   for{(k,i) in Z} printf"(%d %d)  ", k, i > results_5.txt; 
+	    
+	   printf"\n\nUpdated arc-demands:\n\n" > results_5.txt;
+	   for{(i,j,k) in X} printf"(%d %d %d)   ", i, j, k > results_5.txt; 
+   }
+   
+   # For each customer j, order the concentrators from the nearest (argmin(i) g[i,j])
+   for {j in U}{
+   
+   		if (card(C) < p) then{
+   			let nearestConcentrator:= {i in I: g[i,j] == min{l in I} g[l,j]};
+   		}
+   		else{
+   			let nearestConcentrator:= {i in C: g[i,j] == min{l in C} g[l,j]};
+   		}
+   		
+   		break;
+   }
+   
+   if (PrintSteps != 0) then{
+	   printf"\n\nBest Concentrators-Customer pair:\n" > results_5.txt;  
+	   
+	   # Print which Concentrator is chosen for the first Customer remaining in U
+	   for {j in U}{
+	   
+	   		for{i in nearestConcentrator} printf"Concen-Customer = (%d %d); g = %d", i, j, g[i,j] > results_5.txt; 
+	   		
+	   		break;
+	   }
+	   printf"\n\n">results_5.txt;
+   }
+   
+   for {j in U}{
+   
+	   for{i in nearestConcentrator}{
+	   	
+	   		# Update Concentrators
+	   		let C := C union {i};
+	   		
+	   		# Update Concentrators-Customer
+	   		let G := G union {(i,j)};
+	   		
+	   		let greedySol := greedySol + g[i,j];
+	   		
+	   		# Just update one node
+	   		break;
+	 
+	   }
+	   
+	   break;
+	}
+
+  
+} while (card(U) >= 1);
+
+let time1 := _ampl_user_time;
+
+printf"\n" > results_5.txt;
+
+printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+printf"                      Greedy cost and solution \n" > results_5.txt;
+printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+
+printf"\nCost = %d\n", greedySol >results_5.txt;
+printf"Computational time %f\n\n", time1 > results_5.txt;
+
+printf"                      Final composition of C and G\n" > results_5.txt;
+printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+
+
+printf"\nSites of Concentrators active\n"  > results_5.txt;
+
+display card(C) > results_5.txt;
+
+display C > results_5.txt;
+
+
+printf"\nConcentrators-Customer pair\n"  > results_5.txt;
+
+display card(G) > results_5.txt;
+
+display G > results_5.txt;
+
+
+
+
+ 
+
+
+
+

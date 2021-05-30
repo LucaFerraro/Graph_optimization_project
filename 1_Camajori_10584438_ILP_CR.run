@@ -2,16 +2,16 @@ reset;
 
 model 1_Camajori_10584438_ILP_CR.mod;
 
-data instanceABR.dat;
+data instanceAB1.dat;
 
 option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds
 
 # Definition of the problem
-problem ILP: x, y, z, Cost, load_balance, node_capacity, arc_capacity;
+problem ILP: x, y, z, Cost, load_balance, node_capacity, arc_capacity, demand_assignement;
 
 # Definition of the CR problem
-problem CR: x_CR, y_CR, z_CR, Cost_CR, load_balance_CR, node_capacity_CR, arc_capacity_CR;
+problem CR: x_CR, y_CR, z_CR, Cost_CR, load_balance_CR, node_capacity_CR, arc_capacity_CR, demand_assignement_CR;
 
 # Paramters for computational time
 param tic;
@@ -34,6 +34,7 @@ display Cost > results_1.txt;
 let toc := _ampl_user_time + _total_solve_user_time;
 let ILP_time := toc - tic;
 printf"ILP time: %g\n\n", ILP_time >results_1.txt;
+display z;
 
 let tic := toc;
 
