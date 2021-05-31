@@ -8,10 +8,10 @@ option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds
 
 # Definition of the problem
-problem ILP: x, y, z, Cost, load_balance, node_capacity, arc_capacity, demand_assignement;
+problem ILP: x, y, z, Cost, load_balance, node_capacity, arc_capacity;
 
 # Definition of the CR problem
-problem CR: x_CR, y_CR, z_CR, Cost_CR, load_balance_CR, node_capacity_CR, arc_capacity_CR, demand_assignement_CR;
+problem CR: x_CR, y_CR, z_CR, Cost_CR, load_balance_CR, node_capacity_CR, arc_capacity_CR;
 
 # Paramters for computational time
 param tic;

@@ -37,9 +37,6 @@ subject to node_capacity {i in N}:
 subject to arc_capacity {(i,j) in A}:
 	sum {k in D} x[i,j,k]*d[k] <= uu;
 
-# demand_assignement constraints
-subject to demand_assignement {k in D}:
-	sum {i in N} z[k,i] = 1;
 
 
 #--------------------------------------------------
@@ -76,9 +73,7 @@ subject to node_capacity_CR {i in N}:
 subject to arc_capacity_CR {(i,j) in A}:
 	sum {k in D} x_CR[i,j,k]*d[k] <= uu;
 
-# demand_assignement constraints
-subject to demand_assignement_CR {k in D}:
-	sum {i in N} z_CR[k,i] = 1;
+
 
 
 

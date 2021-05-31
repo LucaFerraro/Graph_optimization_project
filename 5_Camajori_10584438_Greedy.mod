@@ -24,3 +24,10 @@ set D_uncovered := D diff D_covered;
 
 # Set of spare capacity for each node
 param C_spare{N} default cap{N};
+
+# Set of spare capacity for each arc
+param C_spare_arc{A} default uu;
+
+
+# Set of Destinations
+set Dest within N ordered;

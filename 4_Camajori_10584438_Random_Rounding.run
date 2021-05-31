@@ -2,13 +2,13 @@ reset;
 
 model 4_Camajori_10584438_Random_Rounding.mod;
 
-data instanceNORBP.dat;
+data instanceAB1.dat;
 
 option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds
 
 # Definition of the partial_CR problem
-problem partial_CR: x, y_CR, z_CR, Cost_CR, load_balance_CR, node_capacity_CR, arc_capacity_CR, demand_assignement_CR;
+problem partial_CR: x_CR, y_CR, z_CR, Cost_CR, load_balance_CR, node_capacity_CR, arc_capacity_CR, consistency_Z_Y_CR;
 
 # Paramters for computational time
 param tic;
@@ -19,11 +19,17 @@ param MaxIter default card(N)*100;
 
 
 #current partial solution
-let CY := {};
-let PY := {};
+let CZ := {};
+let CX := {};
 
-# index to 
-param index default first(PY);
+let PI := {};
+let PJ := {};
+let PD := {};
+
+# index to randomize 
+param index;
+param index2;
+param index3;
 
 
 # random parameter
@@ -39,8 +45,9 @@ printf"-------------------------------------------------------------------------
 printf"                           Initial values \n" > results_4.txt;
 printf"-----------------------------------------------------------------------------\n\n" > results_4.txt;
 
-display card(CY) > results_4.txt;
-display card(PY) > results_4.txt;
+display card(CZ) > results_4.txt;
+display card(CX) > results_4.txt;
+
 
 
 printf"\n" > results_4.txt;
@@ -72,55 +79,104 @@ repeat{
        
    display Cost_CR > results_4.txt;
    
+  
+   
+   # Put in CZ the demand-facilities with z^*=1
+   let CZ := CZ union {setof {k in D, i in N: z_CR[k,i] = 1} (k,i)}; 
+   
+   # Put in CX the arc-demand with x^*=1
+   let CX := CX union {setof {(i,j) in A, k in D: x_CR[i,j,k] = 1} (i,j,k)};
       
-   # Put in CY the facilities with y^*=1
-   let CY := CY union {setof {i in N: y_CR[i] = 1} i};
+   printf"Updated CZ:\n\n" > results_4.txt;
+   printf"Updated CX:\n\n" > results_4.txt;
+		
+   display card(CZ) > results_4.txt;
+ 
+   let PD := PD union {setof {k in D, i in N: 0 < z_CR[k,i] < 1} k};      
+   let PI := PI union {setof {k in D, i in N: 0 < z_CR[k,i] < 1} i}; 
+     
+   # If no fractionary zki
+   if card(PD) != 0 then{
+	   repeat{
+		
+		# select a random index
+	   	let index := member(int(Uniform(1,card(PD))),PD);
+	   	let index2 := member(int(Uniform(1,card(PI))),PI);
+		
+		# remove it
+	   	let PI := PI diff {index2};
+		
+		# generate a random value r between 0 and 1 
+	   	let r := Uniform(0,1);
+	   	
+	   	printf "Demand-Facility considered %4d: prob=%f z=%f ", index, r, z_CR[index, index2] > results_4.txt;
+		
+		# add Demand-Facility index to the solution if z^*[index, index2] > r
+	   	if r <= z_CR[index,index2] then 
+	   	{
+	    	let CZ := CZ union {(index,index2)};
+	      	printf " -> added to the Demand-Facility\n" > results_4.txt;	
+	   	}
+	   	else
+	   		printf"\n" > results_4.txt;
+	   	 
+	   }while (card(PI) > 0);
+   }
+
    
-   # Put in PY the facilities with y^* fractionary
-   let PY := setof {i in N: 0 < y_CR[i] < 1} i;
+   let PI := {};
+   let PI := PI union {setof {(i,j) in A, k in D: 0 < x_CR[i,j,k] < 1} i};
    
-   # If all the yi are integer, we know that zki are integer and so we go out from the while
-   if card(PY) == 0 then{
+   # If all the xijk and zki are integer, we know that yi are integer and so we go out from the while
+   if card(PI) == 0 and card(PD) == 0 then{
    		break
    }
+    
    
-   printf"Updated CY:\n\n" > results_4.txt;
-		
-   display card(CY) > results_4.txt;
+   let PJ := {};
+   let PD := {};
+	
+   let PJ := PJ union {setof {(i,j) in A, k in D: 0 < x_CR[i,j,k] < 1} j};
+   let PD := PD union {setof {(i,j) in A, k in D: 0 < x_CR[i,j,k] < 1} k};
    
-     
    repeat{
 	
-	# select a random node index in PY
-   	let index := member(int(Uniform(1,card(PY))),PY);
+	# select a random index
+   	let index := member(int(Uniform(1,card(PI))),PI);
+   	let index2 := member(int(Uniform(1,card(PJ))),PJ);
+   	let index3 := member(int(Uniform(1,card(PD))),PD);
 	
-	# remove it from PY
-   	let PY := PY diff {index};
+	# remove it from PX
+   	let PI := PI diff {index};
+   	let PJ := PJ diff {index2};
+   	let PD := PD diff {index3};
 	
 	# generate a random value r between 0 and 1 
    	let r := Uniform(0,1);
    	
-   	printf "Node considered %4d: prob=%f y=%f ", index, r, y_CR[index] > results_4.txt;
+   	printf "Arc-Demand considered %4d: prob=%f x=%f ", index, r, x_CR[index, index2, index3] > results_4.txt;
 	
-	# add node index to the solution if y^*[index] > r
-   	if r <= y_CR[index] then 
+	# add Arc-Demand index to the solution if x^*[index, index2, index3] > r
+   	if r <= x_CR[index, index2, index3] then 
    	{
-    	let CY := CY union {index};
-      	printf " -> added to the opened facilities \n" > results_4.txt;	
+    	let CX := CX union {(index, index2, index3)};
+      	printf " -> added to the Arc-Demand\n" > results_4.txt;	
    	}
    	else
    		printf"\n" > results_4.txt;
    	 
-   }while (card(PY) > 0);
+   }while (card(PI) > 0);
    
    # Fix variables for next problem
-   fix {i in CY} y_CR[i] := 1;
+   fix {(k,i) in CZ} z_CR[k,i] := 1;
+   fix {(i,j,k) in CX} x_CR[i,j,k] := 1;
    
    printf"\n" > results_4.txt;
    
-   printf"Updated CY:\n\n" > results_4.txt;
-   
-   display card(CY) > results_4.txt;
+   printf"Updated CZ:\n\n" > results_4.txt;
+   display card(CZ) > results_4.txt;
+   printf"Updated CX:\n\n" > results_4.txt;
+   display card(CX) > results_4.txt;
       
    
 } while (iter < MaxIter);
@@ -134,24 +190,15 @@ printf"                      Final composition of variables \n" > results_4.txt;
 printf"     ------------------------------------------------------------------- \n\n" > results_4.txt;
 
 
-# if not all variables yi are integer, put them to 1
-let PY := {setof {i in N: 0 < y_CR[i] < 1} i};
-if card(PY) > 0 then {
-	solve partial_CR;
-	let PY := {setof {i in N: 0 < y_CR[i] < 1} i};
-	fix {i in PY} y_CR[i] := 1;
-	solve partial_CR;
-}
 
+display card(CZ) > results_4.txt;
+display card(CX) > results_4.txt;
 
-display card(CY) > results_4.txt;
-
-display CY > results_4.txt;
 display y_CR > results_4.txt;
 display z_CR > results_4.txt;
-# display x > results_4.txt;
+# display x_CR > results_4.txt;
 
-let randRound_cost := sum{i in CY}c[i] + sum {k in D, (i,j) in A} x[i,j,k]*g[i,j];
+let randRound_cost := sum{i in N} y_CR[i]*c[i] + sum {(i,j,k) in CX} g[i,j];
 
 printf"\n\nRandomized Rounding cost %f", randRound_cost > results_4.txt;
 printf"\n\nTime Randomized Rounding  %f", Randomized_Rounding_time > results_4.txt;
