@@ -1,4 +1,5 @@
 reset;
+reset;
 reset option;
 
 model parameterDefinition.mod
@@ -30,9 +31,9 @@ set X := {}; # xijk
 # Destinations
 set Dest := {};
 
-display Y;
-display Z;
-display X;
+#display Y;
+#display Z;
+#display X;
 
 printf"-----------------------------------------------------------------------------\n" > results_5.txt;
 printf"                		   Greedy  \n" > results_5.txt;
@@ -59,8 +60,8 @@ display X;
 
    
    
-   for {k in D_uncovered}
-   {
+for {k in D_uncovered}
+{
    		
    		let s:= o[k];
    		
@@ -68,73 +69,56 @@ display X;
    		let Dest:= setof{i in Y: C_spare[i] >= d[k]}
    		
    		# If there is at least one element in Dest
-   		if card(Dest) != 0 then {
-   			
+   		if card(Dest) != 0 then 
+   		{	
    			for {destination in Dest}
    			{
-   			
+   					
+   				# Solving shortest path + capacity problem
 	   			let dst:= destination;
+	   			let demand := d[k]
+	   			let arc_cap := uu
 	   			solve SP;
 	   			
-	   			# Check if feasible
-	   			for {(i,j) in A: x_SP[i,j] = 1}
-	   			{
-	   				if C_spare_arc[i,j] < d[k] then
-	   				{
-	   					let Feasible := 0;
-	   					break
-	   				}
-	   			}
+	   			# Updating parameters and sets:
+	   			let X := X union {(i,j) in A, k in D: x_SP[i,j] = 1} (i,j,k);
+	   			let Z := Z union {(k,dst)};
+	   			let {(i,j) in A: x_SP[i,j] = 1} C_spare_arc[i,j] :=  C_spare_arc[i,j] - d[k];
+ 				let C_spare[dst] := C_spare[dst] - d[k];
 	   			
-	   			if Fesible then
-	   			{
-	 
-	   				let X := X union {(i,j) in A, k in D: x_SP[i,j] = 1} (i,j,k);
-	   				let {(i,j) in A: x_SP[i,j] = 1} C_spare_arc[i,j] :=  C_spare_arc[i,j] - d[k];
-	   				
-	   				let Z := Z union {(k,dst)};
-	   				let C_spare[dst] := C_spare[dst] - d[k];
-	   				
-	   				break		
-	   			}	   				  	
+	   			# Stopping:
+	   			break;
+	   				  	
 	   		}
+	   	}
 	   		
    		else 
    		{
    		
-   			let dst := {i in I: c[i] == min{l in I} c[l]} i;
-   			let Y := Y union {dst};
+   			let destination := {i in I: c[i] == min{l in I} c[l]} i;
    			
-   			solve SP;
-   			
-   			# Check if feasible
-   			for {(i,j) in A: x_SP[i,j] = 1}
+   			for {dest in destination}
    			{
-   				if C_spare_arc[i,j] < d[k] then
-   				{
-   					let Feasible := 0;
-   					break
-   				}
-   			}
    			
-   			if Fesible then
-   			{
- 
-   				let X := X union {(i,j) in A, k in D: x_SP[i,j] = 1} (i,j,k);
-   				let {(i,j) in A: x_SP[i,j] = 1} C_spare_arc[i,j] :=  C_spare_arc[i,j] - d[k];
+   				# Solving shortest path + capacity problem
+   				let dst = destination;
+   				let demand := d[k];
+   				let arc_cap := uu
+   				solve SP;
    				
-   				let Z := Z union {(k,dst)};
-   				let C_spare[dst] := C_spare[dst] - d[k];
-   				
-   				break		
-   			}   			
-   			
-   			   		
+   				# Updating parameters and sets:
+	   			let X := X union {(i,j) in A, k in D: x_SP[i,j] = 1} (i,j,k);
+	   			let Z := Z union {(k,dst)};
+	   			let Y := Y union {dst}
+	   			let {(i,j) in A: x_SP[i,j] = 1} C_spare_arc[i,j] :=  C_spare_arc[i,j] - d[k];
+ 				let C_spare[dst] := C_spare[dst] - d[k];
+   			}		   		
    		}
    		
 
 	let iter := iter + 1;
-	if (PrintSteps != 0) then{
+	if (PrintSteps != 0) then
+	{
 		   printf"  					        Iteration %d \n",iter > results_5.txt;
 		   printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
 		      
@@ -147,12 +131,10 @@ display X;
 		   for{(k,i) in Z} printf"(%d %d)  ", k, i > results_5.txt; 
 		    
 		   printf"\n\nUpdated arc-demands:\n\n" > results_5.txt;
-		   for{(i,j,k) in X} printf"(%d %d %d)   ", i, j, k > results_5.txt; 
-	   }
-	   
-	 let Feasible := 1;
-   
+		   for{(i,j,k) in X} printf"(%d %d %d)   ", i, j, k > results_5.txt;
    	}
+}
+   	
    		
    
    

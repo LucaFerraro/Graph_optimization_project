@@ -23,7 +23,7 @@ set D_covered := setof{(k,i) in Z} k;
 set D_uncovered := D diff D_covered;
 
 # Set of spare capacity for each node
-param C_spare{N} default cap{N};
+param C_spare{N} default 10000;
 
 # Set of spare capacity for each arc
 param C_spare_arc{A} default uu;
