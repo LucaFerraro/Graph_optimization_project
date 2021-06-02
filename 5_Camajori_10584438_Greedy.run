@@ -1,8 +1,8 @@
 reset;
-reset;
 reset option;
+option solver 'cplex';
 
-model parameterDefinition.mod
+model parameterDefinition.mod;
 model 5_Camajori_10584438_Greedy.mod;
 
 model 5_Camajori_10584438_Greedy_SP.mod;
@@ -15,7 +15,9 @@ param iter default 0;
 
 param greedySol default 0;
 
-param time1 default 0;
+param tic default 0;
+param toc;
+param Greedy_time;
 
 param Feasible default 1;
 
@@ -24,49 +26,51 @@ param PrintSteps default 0;
 
 
 # Current partial solution
-set Y := {}; # yi
-set Z := {}; # zki 
-set X := {}; # xijk
+let Y := {}; # yi
+let Z := {}; # zki 
+let X := {}; # xijk
 
-# Destinations
-set Dest := {};
+# Initialize Auxiliary Set of Destinations
+let Dest := {};
 
-#display Y;
-#display Z;
-#display X;
+# Initialize Arc spare capacity
+let {i in N} C_spare[i] := cap[i];
+
 
 printf"-----------------------------------------------------------------------------\n" > results_5.txt;
 printf"                		   Greedy  \n" > results_5.txt;
 printf"-----------------------------------------------------------------------------\n\n" > results_5.txt;
 
+let tic := _ampl_user_time;  
 
 
-# Open a facility in each node that can serve its own demand
+# If an Open facility in each node can serve its own demand (Not considered in ILP)
+/*
 for {k in D, i in N: o[k] = i}{
 	if C_spare[i] >= d[k] then{
 		let Y := Y union {i};
 		let Z := Z union {(k,i)};
 		let C_spare[i] := C_spare[i] - d[k];
+		
 	}
+	let iter := iter + 1;
 }
+*/
 
-printf"  					        Initial assignment %d \n" > results_5.txt;
-printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
 
 display Y;
 display Z;
 display X;
-
-
-   
-   
+print(card(Z));
+print(iter);
+  
 for {k in D_uncovered}
 {
    		
-   		let s:= o[k];
+   		let s_SP:= o[k];
    		
    		# Destination opened with enough spare capacity
-   		let Dest:= setof{i in Y: C_spare[i] >= d[k]}
+   		let Dest:= setof{i in Y: C_spare[i] >= d[k]} i;
    		
    		# If there is at least one element in Dest
    		if card(Dest) != 0 then 
@@ -75,16 +79,28 @@ for {k in D_uncovered}
    			{
    					
    				# Solving shortest path + capacity problem
-	   			let dst:= destination;
-	   			let demand := d[k]
-	   			let arc_cap := uu
+	   			let dst_SP:= destination;
+	   			let demand_SP := d[k];
+	   			let {(i,j) in A} arc_cap_SP[i,j] := C_spare_arc[i,j];
 	   			solve SP;
 	   			
 	   			# Updating parameters and sets:
-	   			let X := X union {(i,j) in A, k in D: x_SP[i,j] = 1} (i,j,k);
-	   			let Z := Z union {(k,dst)};
+	   			for{(i,j) in A, k2 in D}
+	   			{
+	   				if x_SP[i,j] == 1 and k2 == k then
+	   				{
+	   					let X := X union {(i,j,k2)};
+	   					
+	   					if PrintSteps == 1 then 
+	   					{
+	   						printf"\n\nx[%d,%d,%d] = 1", i,j,k2  > results_5.txt;
+	   					}
+	   				}
+	   			}
+
+	   			let Z := Z union {(k,dst_SP)};
 	   			let {(i,j) in A: x_SP[i,j] = 1} C_spare_arc[i,j] :=  C_spare_arc[i,j] - d[k];
- 				let C_spare[dst] := C_spare[dst] - d[k];
+ 				let C_spare[dst_SP] := C_spare[dst_SP] - d[k];
 	   			
 	   			# Stopping:
 	   			break;
@@ -95,23 +111,37 @@ for {k in D_uncovered}
    		else 
    		{
    		
-   			let destination := {i in I: c[i] == min{l in I} c[l]} i;
+   			let Dest:= {i in Y_closed: c[i] == min{l in Y_closed} c[l]};
    			
-   			for {dest in destination}
+   			for {dest in Dest}
    			{
    			
    				# Solving shortest path + capacity problem
-   				let dst = destination;
-   				let demand := d[k];
-   				let arc_cap := uu
+   				let dst_SP := dest;
+   				let demand_SP := d[k];
+   				let {(i,j) in A} arc_cap_SP[i,j] := C_spare_arc[i,j];
    				solve SP;
    				
    				# Updating parameters and sets:
-	   			let X := X union {(i,j) in A, k in D: x_SP[i,j] = 1} (i,j,k);
-	   			let Z := Z union {(k,dst)};
-	   			let Y := Y union {dst}
+	   			for{(i,j) in A, k2 in D}
+	   			{
+	   				if x_SP[i,j] == 1 and k2 == k then
+	   				{
+	   					let X := X union {(i,j,k2)};
+	   					
+	   					if PrintSteps == 1 then 
+	   					{
+	   						printf"\n\nx[%d,%d,%d] = 1", i,j,k2  > results_5.txt;
+	   					}
+	   				}
+	   			}
+	   			let Z := Z union {(k,dst_SP)};
+	   			let Y := Y union {dst_SP};
 	   			let {(i,j) in A: x_SP[i,j] = 1} C_spare_arc[i,j] :=  C_spare_arc[i,j] - d[k];
- 				let C_spare[dst] := C_spare[dst] - d[k];
+ 				let C_spare[dst_SP] := C_spare[dst_SP] - d[k];
+ 				
+ 				# Stopping:
+ 				break;
    			}		   		
    		}
    		
@@ -135,40 +165,29 @@ for {k in D_uncovered}
    	}
 }
    	
-   		
-   
-   
-   
-   
-   
 
-let time1 := _ampl_user_time;
+   		
+let toc := _ampl_user_time + _total_solve_user_time;
+let Greedy_time := toc - tic;
 
 printf"\n" > results_5.txt;
 
+printf"                      Final composition of variables \n" > results_5.txt;
 printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
-printf"                      Greedy cost and solution \n" > results_5.txt;
-printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+   
+   
+   
+let greedySol := greedySol + sum {i in Y} c[i]+ sum {(i,j,k) in X} g[i,j];  
+   
 
-printf"\nCost = %d\n", greedySol >results_5.txt;
-printf"Computational time %f\n\n", time1 > results_5.txt;
-
-printf"                      Final composition of C and G\n" > results_5.txt;
-printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
-
-
-printf"\nSites of Concentrators active\n"  > results_5.txt;
-
-display card(C) > results_5.txt;
-
-display C > results_5.txt;
-
-
-printf"\nConcentrators-Customer pair\n"  > results_5.txt;
-
-display card(G) > results_5.txt;
-
-display G > results_5.txt;
+display Y, card(Y) > results_5.txt;
+display Z, card(Z) > results_5.txt;
+#display X > results_5.txt;
+   
+printf"\n\nGreedy cost %f", greedySol > results_5.txt;
+printf"\n\nTime Greedy  %f", Greedy_time > results_5.txt; 
+printf"\n\nIterations  %f", iter > results_5.txt;  
+   
 
 
 

@@ -1,0 +1,75 @@
+#-------------------------------------------------
+# 		GREEDY ALGORITHM
+#-------------------------------------------------
+include 5_Camajori_10584438_Greedy.run;
+
+# paramter for k_opt constraint
+param k_param default (nb_n + card(A)*nb_d + nb_n*nb_d)/50;
+
+# set the initial solution to the solution provided by the greedy algorithm
+param best_cost default 0;
+let best_cost := greedySol; 
+
+model 6_Camajori_10584438_k_opt.mod;
+option solver 'cplex';
+option cplex_options 'timelimit=600'; # in seconds
+problem kOpt: x_kopt, y_kopt, z_kopt, Cost_kopt, load_balance_kopt, node_capacity_kopt, arc_capacity_kopt, k_opt_constraint;
+
+param tic_k_opt default 0;
+param toc_k_opt default 0;
+param k_opt_time default 0;
+param flag default 1;
+
+printf"\n\nInitial solution objective function value: %f\n\n", best_cost > results_6.txt;
+
+let tic_k_opt := _ampl_elapsed_time;
+
+param koptImprovements default 0;
+
+repeat {
+   
+	# solve the k-opt neighborhood problem 
+	solve kOpt;
+      	
+	# if cplex returned a feasible or optimal solution 
+	# (must be checked by means of the solve code due to the time limit)
+	# and this solution is better than the current one, update the current solution otherwise set the stopping criterion	
+	if ((solve_result_num in {0,2,3,422}) && (Cost_kopt < best_cost)) then 
+	{
+		let best_cost := Cost_kopt;
+		
+		
+		let Y := {i in N: y_kopt[i] = 1};
+		let X := {(i,j) in A, k in D: x_kopt[i,j,k] = 1};
+		let Z := {(k,i) in D cross N: z_kopt[k,i] = 1};
+		
+		let koptImprovements := koptImprovements+1;
+      			
+	} 
+	else 
+	{
+		let flag := 0;
+	};
+   
+} while ( flag = 1 );
+
+let toc_k_opt := _ampl_elapsed_time + _total_solve_user_time;
+let k_opt_time := toc_k_opt - tic_k_opt;
+
+printf"\n" > results_6.txt; 
+printf"-----------------------------------------------------------------------------\n" > results_6.txt;
+printf"                		   K-OPT NEIGHBORHOOD \n" > results_6.txt;
+printf"-----------------------------------------------------------------------------\n" > results_6.txt;
+printf"\n" > results_6.txt;
+
+printf"k value: %d \n", k_param> results_6.txt;
+
+display Y, card(Y) > results_6.txt;
+display Z, card(Z) > results_6.txt;
+#display X > results_6.txt;
+   
+printf"\n\k-opt cost %f", best_cost > results_6.txt;
+printf"\n\nTime k-opt  %f", k_opt_time > results_6.txt; 
+
+printf"\nNumber of improvements %d\n", koptImprovements >results_6.txt;
+

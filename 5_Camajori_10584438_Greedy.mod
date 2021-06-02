@@ -22,12 +22,12 @@ set D_covered := setof{(k,i) in Z} k;
 # Set of Uncovered Demands
 set D_uncovered := D diff D_covered;
 
+# Auxiliary Set of Destinations 
+set Dest within N ordered;
+
 # Set of spare capacity for each node
-param C_spare{N} default 10000;
+param C_spare{N};
 
 # Set of spare capacity for each arc
 param C_spare_arc{A} default uu;
 
-
-# Set of Destinations
-set Dest within N ordered;

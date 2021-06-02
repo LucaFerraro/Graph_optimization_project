@@ -28,6 +28,9 @@ printf"-------------------------------------------------------------------------
 let tic := _ampl_user_time;
 
 solve ILP;
+
+display z > results_1.txt;
+display y > results_1.txt;
 display Cost > results_1.txt;
 
 # Considering as time total solver time, the sum 
