@@ -1,0 +1,107 @@
+reset;
+reset option;
+
+model 3_Camajori_10584438_VI_CUT.mod;
+
+data instanceAB1.dat;
+
+option solver 'cplex';
+option cplex_options 'timelimit=600'; # in seconds
+
+
+# Definition of the CR problem
+problem CR: x_CR, y_CR, z_CR, Cost_CR, load_balance_CR, node_capacity_CR, arc_capacity_CR, VI;
+
+# Definition of the Separation problem
+problem Separation: u, Violation, CoverCondition;
+
+printf"-----------------------------------------------------------------------------\n" > results_3.txt;
+printf"  			 			    LP relaxation	                                \n" > results_3.txt;
+printf"-----------------------------------------------------------------------------\n" > results_3.txt;
+
+param initialSol default 0;
+param finalSol default 0;
+param tic;
+param toc;
+param VI_time;
+
+solve CR;
+let initialSol := Cost_CR;
+display Cost_CR > results_3.txt;
+
+
+printf"\n" > results_3.txt;
+printf"-----------------------------------------------------------------------------\n" > results_3.txt;
+printf"  			 			Violated cover inequalities	        		        \n" > results_3.txt;
+printf"-----------------------------------------------------------------------------\n" > results_3.txt;
+printf"\n" > results_3.txt;
+
+param iter default 0;
+param MaxIter default 1000;
+let tic := _ampl_user_time;
+
+# Repeat until there are no violated cover inequalities
+repeat{
+
+   printf "----------------------------------- Iter: %d ---------------------------------\n", iter > results_3.txt;
+
+   # Update iterator 	
+   let iter := iter + 1;
+   
+   # Solve the LP relaxation with current set of cover inequalities 
+   solve CR;
+
+   printf "iter=%d, Obj_CR=%.3f\n", iter, Cost_CR > results_3.txt;
+
+   for {(i,j) in A}
+   {
+   		# Prepare the objective function of the separation problem
+   		let {k in D} x_star[k] := x_CR[i,j,k];
+   		
+   		# Solve the separation problem
+   		solve Separation;
+   		
+   		printf "SEP obj func=%.3f \n", Violation > results_3.txt;
+   		
+   		# Check if a violated cover exists
+	   if (Violation < 1) then 
+	   {
+	   		
+	   	  # Update set arcs of cover
+	   	  let C := C union {(i,j)};
+	   	  
+	      # Create new cover 
+	      let K_star[i,j] := setof {k in D: u[k] = 1} k;
+	
+	      printf"C[%d] := ",card(C) > results_3.txt;
+	      for{(i,j) in C}
+	      {
+	      	printf"%d %d",i,j > results_3.txt;
+	      }
+	      printf"\n\n" > results_3.txt;
+	      	
+	      # We consider only the first arc for which we add some cut
+		  break;	   
+	   }
+	   	   
+   }
+
+} until ( Violation >= 1 or iter > MaxIter);
+
+
+solve CR;
+let finalSol:=Cost_CR;
+
+# Considering as time total solver time
+let toc := _ampl_user_time + _total_solve_user_time;
+let VI_time := toc - tic;
+printf"VI problem time: %g\n\n", VI_time > results_3.txt;
+
+printf "Optimal values of x for LP with all violated cover inequalities:\n" > results_3.txt;
+
+# display x_CR > results_3.txt; 
+display z_CR > results_3.txt; 
+display y_CR > results_3.txt; 
+
+printf "Total number of cover inequalities considered: %d\n", card(C) > results_3.txt;
+

@@ -1,6 +1,7 @@
 reset;
 reset option;
 option solver 'cplex';
+option cplex_options 'timelimit=600'; # in seconds
 
 model parameterDefinition.mod;
 model 5_Camajori_10584438_Greedy.mod;

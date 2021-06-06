@@ -1,0 +1,198 @@
+reset;
+reset option;
+
+model parameterDefinition.mod
+model 5_Camajori_10584438_Greedy.mod;
+
+model 5_Camajori_10584438_Greedy_SP.mod;
+problem SP: x_SP, SPCost, balance; 
+
+data instanceAB1.dat;
+
+
+param iter default 0;
+
+param greedySol default 0;
+
+param time1 default 0;
+
+param Feasible default 1;
+
+# To print all steps of greedy procedure. 
+param PrintSteps default 0;
+
+
+# Current partial solution
+set Y := {}; # yi
+set Z := {}; # zki 
+set X := {}; # xijk
+
+# Destinations
+set Dest := {};
+
+display Y;
+display Z;
+display X;
+
+printf"-----------------------------------------------------------------------------\n" > results_5.txt;
+printf"                		   Greedy  \n" > results_5.txt;
+printf"-----------------------------------------------------------------------------\n\n" > results_5.txt;
+
+
+
+# Open a facility in each node that can serve its own demand
+for {k in D, i in N: o[k] = i}{
+	if C_spare[i] >= d[k] then{
+		let Y := Y union {i};
+		let Z := Z union {(k,i)};
+		let C_spare[i] := C_spare[i] - d[k];
+	}
+}
+
+printf"  					        Initial assignment %d \n" > results_5.txt;
+printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+
+display Y;
+display Z;
+display X;
+
+
+   
+   
+   for {k in D_uncovered}
+   {
+   		
+   		let s:= o[k];
+   		
+   		# Destination opened with enough spare capacity
+   		let Dest:= setof{i in Y: C_spare[i] >= d[k]}
+   		
+   		# If there is at least one element in Dest
+   		if card(Dest) != 0 then {
+   			
+   			for {destination in Dest}
+   			{
+   			
+	   			let dst:= destination;
+	   			solve SP;
+	   			
+	   			# Check if feasible
+	   			for {(i,j) in A: x_SP[i,j] = 1}
+	   			{
+	   				if C_spare_arc[i,j] < d[k] then
+	   				{
+	   					let Feasible := 0;
+	   					break
+	   				}
+	   			}
+	   			
+	   			if Fesible then
+	   			{
+	 
+	   				let X := X union {(i,j) in A, k in D: x_SP[i,j] = 1} (i,j,k);
+	   				let {(i,j) in A: x_SP[i,j] = 1} C_spare_arc[i,j] :=  C_spare_arc[i,j] - d[k];
+	   				
+	   				let Z := Z union {(k,dst)};
+	   				let C_spare[dst] := C_spare[dst] - d[k];
+	   				
+	   				break		
+	   			}	   				  	
+	   		}
+	   		
+   		else 
+   		{
+   		
+   			let dst := {i in I: c[i] == min{l in I} c[l]} i;
+   			let Y := Y union {dst};
+   			
+   			solve SP;
+   			
+   			# Check if feasible
+   			for {(i,j) in A: x_SP[i,j] = 1}
+   			{
+   				if C_spare_arc[i,j] < d[k] then
+   				{
+   					let Feasible := 0;
+   					break
+   				}
+   			}
+   			
+   			if Fesible then
+   			{
+ 
+   				let X := X union {(i,j) in A, k in D: x_SP[i,j] = 1} (i,j,k);
+   				let {(i,j) in A: x_SP[i,j] = 1} C_spare_arc[i,j] :=  C_spare_arc[i,j] - d[k];
+   				
+   				let Z := Z union {(k,dst)};
+   				let C_spare[dst] := C_spare[dst] - d[k];
+   				
+   				break		
+   			}   			
+   			
+   			   		
+   		}
+   		
+
+	let iter := iter + 1;
+	if (PrintSteps != 0) then{
+		   printf"  					        Iteration %d \n",iter > results_5.txt;
+		   printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+		      
+		   printf"\n" > results_5.txt;
+		   
+		   printf"\n\nUpdated opened facilities Y:\n\n" > results_5.txt;
+		   for{i in Y} printf"%d   ", i > results_5.txt; 
+		  
+		   printf"\n\nUpdated pair demand-facility_destination Z:\n\n" > results_5.txt;
+		   for{(k,i) in Z} printf"(%d %d)  ", k, i > results_5.txt; 
+		    
+		   printf"\n\nUpdated arc-demands:\n\n" > results_5.txt;
+		   for{(i,j,k) in X} printf"(%d %d %d)   ", i, j, k > results_5.txt; 
+	   }
+	   
+	 let Feasible := 1;
+   
+   	}
+   		
+   
+   
+   
+   
+   
+
+let time1 := _ampl_user_time;
+
+printf"\n" > results_5.txt;
+
+printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+printf"                      Greedy cost and solution \n" > results_5.txt;
+printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+
+printf"\nCost = %d\n", greedySol >results_5.txt;
+printf"Computational time %f\n\n", time1 > results_5.txt;
+
+printf"                      Final composition of C and G\n" > results_5.txt;
+printf"     ------------------------------------------------------------------- \n\n" > results_5.txt;
+
+
+printf"\nSites of Concentrators active\n"  > results_5.txt;
+
+display card(C) > results_5.txt;
+
+display C > results_5.txt;
+
+
+printf"\nConcentrators-Customer pair\n"  > results_5.txt;
+
+display card(G) > results_5.txt;
+
+display G > results_5.txt;
+
+
+
+
+ 
+
+
+
+
