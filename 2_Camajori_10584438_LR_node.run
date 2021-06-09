@@ -101,7 +101,7 @@ repeat {
 	  let LB_LR := max(LB_LR, LR_objective_lambda);  
 	  
 	  if (PrintSteps != 0) then{
-	  		printf"\n Current best upper bound %g", LB_LR > results_2.txt;
+	  		printf"\n Current best lower bound %g", LB_LR > results_2.txt;
 	  } 
 	
 	  # Update multipliers
