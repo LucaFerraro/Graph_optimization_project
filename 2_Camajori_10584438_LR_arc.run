@@ -140,7 +140,7 @@ let LR_time := toc - tic;
 
 printf"-----------------------------------------------------------------------------\n" > results_2.txt;
 
-printf"Lagrangian Relaxation relaxing node_capacity constraint through lambda[i]:\n\n" > results_2.txt;
+printf"Lagrangian Relaxation relaxing arc_capacity constraint through lambda[i]:\n\n" > results_2.txt;
 
 printf"LR_lambda: UB %g - LB %g - time %g - iter %g\n\n", UB_LR, LB_LR, LR_time, iter >results_2.txt;
 
