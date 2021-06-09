@@ -2,7 +2,7 @@ reset;
 
 model 1_Camajori_10584438_ILP_CR.mod;
 
-data instanceAB1.dat;
+data instanceNORROUT.dat;
 
 option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds
@@ -29,15 +29,15 @@ let tic := _ampl_user_time;
 
 solve ILP;
 
-display z > results_1.txt;
-display y > results_1.txt;
+# display z > results_1.txt;
+# display y > results_1.txt;
 display Cost > results_1.txt;
 
 # Considering as time total solver time
 let toc := _ampl_user_time + _total_solve_user_time;
 let ILP_time := toc - tic;
 printf"ILP time: %g\n\n", ILP_time >results_1.txt;
-display z;
+# display z;
 
 let tic := toc;
 
@@ -47,7 +47,7 @@ printf"  			 			    CR relaxation	                                \n" > results_
 printf"-----------------------------------------------------------------------------\n" > results_1.txt;
 
 solve CR;
-display z_CR > results_1.txt;
+# display z_CR > results_1.txt;
 display Cost_CR > results_1.txt;
 
 # Considering as time total solver time, the sum 

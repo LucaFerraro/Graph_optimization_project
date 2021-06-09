@@ -3,7 +3,7 @@ reset option;
 
 model 4_Camajori_10584438_Random_Rounding.mod;
 
-data instanceAB1.dat;
+data instanceNORROUT.dat;
 
 option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds

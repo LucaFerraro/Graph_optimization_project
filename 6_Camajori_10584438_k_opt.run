@@ -1,6 +1,7 @@
 #-------------------------------------------------
 # 		GREEDY ALGORITHM
 #-------------------------------------------------
+# Change in 5_Camajori_10584438_Greedy.run the .dat file
 include 5_Camajori_10584438_Greedy.run;
 
 # paramter for k_opt constraint

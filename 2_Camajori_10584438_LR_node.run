@@ -3,7 +3,7 @@ reset option;
 
 model 2_Camajori_10584438_LR_node.mod;
 
-data instanceAB1.dat;
+data instanceNORBP.dat;
 
 option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds

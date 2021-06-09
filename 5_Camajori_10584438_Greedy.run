@@ -9,7 +9,7 @@ model 5_Camajori_10584438_Greedy.mod;
 model 5_Camajori_10584438_Greedy_SP.mod;
 problem SP: x_SP, SPCost, balance; 
 
-data instanceAB1.dat;
+data instanceNORBP.dat;
 
 
 param iter default 0;

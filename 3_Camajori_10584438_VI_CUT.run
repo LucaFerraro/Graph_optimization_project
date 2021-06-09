@@ -3,7 +3,7 @@ reset option;
 
 model 3_Camajori_10584438_VI_CUT.mod;
 
-data instanceAB1.dat;
+data instanceNORROUT.dat;
 
 option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds
@@ -37,7 +37,7 @@ printf"-------------------------------------------------------------------------
 printf"\n" > results_3.txt;
 
 param iter default 0;
-param MaxIter default 1000;
+param MaxIter default nb_d;
 let tic := _ampl_user_time;
 
 # Repeat until there are no violated cover inequalities

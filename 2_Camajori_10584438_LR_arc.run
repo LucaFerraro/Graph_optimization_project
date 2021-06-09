@@ -3,7 +3,7 @@ reset option;
 
 model 2_Camajori_10584438_LR_arc.mod;
 
-data instanceAB1.dat;
+data instanceNORBP2.dat;
 
 option solver 'cplex';
 option cplex_options 'timelimit=600'; # in seconds
@@ -12,7 +12,7 @@ option cplex_options 'timelimit=600'; # in seconds
 problem LR: x, y, z, LR_objective_lambda, load_balance, node_capacity;
 
 # Paramters for LR
-param MAXITER := 50;
+param MAXITER := 10;
 param tic;
 param toc;
 param LR_time;
@@ -26,7 +26,7 @@ param PrintMultipliers default 0;
 param PrintSteps default 0; 
 
 printf"\n-----------------------------------------------------------------------------\n" > results_2.txt;
-printf"  		Lagrangian Relaxation relaxing node_capacity constraint through lambda[i]  \n" > results_2.txt;
+printf"  		Lagrangian Relaxation relaxing arc_capacity constraint through lambda[i,j]  \n" > results_2.txt;
 printf"-----------------------------------------------------------------------------\n" > results_2.txt;
 
 # Initialize the Lagrangian Relaxation
